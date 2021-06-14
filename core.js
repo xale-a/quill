@@ -6,6 +6,7 @@ import Container from './blots/container';
 import Cursor from './blots/cursor';
 import Embed from './blots/embed';
 import Inline from './blots/inline';
+import Native from './blots/native';
 import Scroll from './blots/scroll';
 import TextBlot from './blots/text';
 
@@ -22,6 +23,7 @@ Quill.register({
   'blots/cursor': Cursor,
   'blots/embed': Embed,
   'blots/inline': Inline,
+  'blots/native': Native,
   'blots/scroll': Scroll,
   'blots/text': TextBlot,
 
