@@ -56,27 +56,15 @@ class Cursor extends EmbedBlot {
     this.parent = null;
   }
 
-  restore() {
-    if (this.selection.composing || this.parent == null) return null;
+  restore(newText) {
+    if (this.parent == null) return null;
     const range = this.selection.getNativeRange();
-    // Link format will insert text outside of anchor tag
-    while (
-      this.domNode.lastChild != null &&
-      this.domNode.lastChild !== this.textNode
-    ) {
-      this.domNode.parentNode.insertBefore(
-        this.domNode.lastChild,
-        this.domNode,
-      );
-    }
-
     const prevTextBlot = this.prev instanceof TextBlot ? this.prev : null;
     const prevTextLength = prevTextBlot ? prevTextBlot.length() : 0;
     const nextTextBlot = this.next instanceof TextBlot ? this.next : null;
     const nextText = nextTextBlot ? nextTextBlot.text : '';
     const { textNode } = this;
     // take text from inside this blot and reset it
-    const newText = textNode.data.split(Cursor.CONTENTS).join('');
     textNode.data = Cursor.CONTENTS;
 
     // proactively merge TextBlots around cursor so that optimization

@@ -32,6 +32,24 @@ class Selection {
         setTimeout(this.update.bind(this, Emitter.sources.USER), 1);
       }
     });
+    this.scroll.domNode.addEventListener('beforeinput', e => {
+      if (
+        e.inputType === 'insertCompositionText' ||
+        e.inputType === 'insertText'
+      ) {
+        // TODO: Should check whether the selection is inside the cursor.
+        const range = this.cursor.restore(e.data);
+        if (range) {
+          this.setNativeRange(
+            range.startNode,
+            range.startOffset + e.data.length,
+            range.endNode,
+            range.endOffset + e.data.length,
+          );
+          e.preventDefault();
+        }
+      }
+    });
     this.emitter.on(Emitter.events.SCROLL_BEFORE_UPDATE, () => {
       if (!this.hasFocus()) return;
       const native = this.getNativeRange();
@@ -74,18 +92,6 @@ class Selection {
     this.root.addEventListener('compositionend', () => {
       this.scroll.batchEnd();
       this.composing = false;
-      if (this.cursor.parent) {
-        const range = this.cursor.restore();
-        if (!range) return;
-        setTimeout(() => {
-          this.setNativeRange(
-            range.startNode,
-            range.startOffset,
-            range.endNode,
-            range.endOffset,
-          );
-        }, 1);
-      }
     });
   }
 
@@ -125,6 +131,8 @@ class Selection {
         blot.insertBefore(this.cursor, nativeRange.start.node); // Should never happen
       }
       this.cursor.attach();
+      // Newly typed chars don't inherit links
+      this.cursor.format('link', null);
     }
     this.cursor.format(format, value);
     this.scroll.optimize();
@@ -386,22 +394,6 @@ class Selection {
       this.savedRange = this.lastRange;
     }
     if (!isEqual(oldRange, this.lastRange)) {
-      if (
-        !this.composing &&
-        nativeRange != null &&
-        nativeRange.native.collapsed &&
-        nativeRange.start.node !== this.cursor.textNode
-      ) {
-        const range = this.cursor.restore();
-        if (range) {
-          this.setNativeRange(
-            range.startNode,
-            range.startOffset,
-            range.endNode,
-            range.endOffset,
-          );
-        }
-      }
       const args = [
         Emitter.events.SELECTION_CHANGE,
         cloneDeep(this.lastRange),
