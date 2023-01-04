@@ -7,6 +7,7 @@ import Parchment from 'parchment';
 import Quill from '../core/quill';
 import logger from '../core/logger';
 import Module from '../core/module';
+import Embed from '../blots/embed';
 
 let debug = logger('quill:keyboard');
 
@@ -37,7 +38,8 @@ class Keyboard extends Module {
         this.addBinding(this.options.bindings[name]);
       }
     });
-    this.addBinding({ key: Keyboard.keys.ENTER, shiftKey: null }, handleEnter);
+    this.addBinding({ key: Keyboard.keys.ENTER }, handleEnter);
+    this.addBinding({ key: Keyboard.keys.ENTER, shiftKey: true }, handleShiftEnter);
     this.addBinding({ key: Keyboard.keys.ENTER, metaKey: null, ctrlKey: null, altKey: null }, function() {});
     if (/Firefox/i.test(navigator.userAgent)) {
       // Need to handle delete and backspace for Firefox in the general case #1171
@@ -404,6 +406,39 @@ function handleEnter(range, context) {
     return lineFormats;
   }, {});
   this.quill.insertText(range.index, '\n', lineFormats, Quill.sources.USER);
+  // Earlier scroll.deleteAt might have messed up our selection,
+  // so insertText's built in selection preservation is not reliable
+  this.quill.setSelection(range.index + 1, Quill.sources.SILENT);
+  this.quill.focus();
+  Object.keys(context.format).forEach((name) => {
+    if (lineFormats[name] != null) return;
+    if (Array.isArray(context.format[name])) return;
+    if (name === 'link') return;
+    this.quill.format(name, context.format[name], Quill.sources.USER);
+  });
+}
+
+function handleShiftEnter(range, context) {
+  class Linebreak extends Embed {}
+  Linebreak.blotName = 'linebreak';
+  Linebreak.tagName = 'br';
+  Quill.register(Linebreak);
+
+  if (range.length > 0) {
+    this.quill.scroll.deleteAt(range.index, range.length);  // So we do not trigger text-change
+  }
+  let lineFormats = Object.keys(context.format).reduce(function(lineFormats, format) {
+    if (Parchment.query(format, Parchment.Scope.BLOCK) && !Array.isArray(context.format[format])) {
+      lineFormats[format] = context.format[format];
+    }
+    return lineFormats;
+  }, {});
+  let nextChar = this.quill.getText(range.index + 1, 1)
+  this.quill.insertEmbed(range.index, 'linebreak', true, Quill.sources.USER);
+  if (nextChar.length === 0) {
+    // second line break inserts only at the end of parent element
+    this.quill.insertEmbed(range.index, 'linebreak', true, Quill.sources.USER);
+  }
   // Earlier scroll.deleteAt might have messed up our selection,
   // so insertText's built in selection preservation is not reliable
   this.quill.setSelection(range.index + 1, Quill.sources.SILENT);
