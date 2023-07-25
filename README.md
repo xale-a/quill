@@ -1,3 +1,20 @@
+<h1>Build</h1>
+
+To install dependencies run:
+<pre>
+npm i
+</pre>
+
+To build Quill run:
+<pre>
+npm run build
+</pre>
+
+To build minified version run:
+<pre>
+npm run build:min
+</pre>
+
 <h1 align="center">
   <a href="https://quilljs.com/" title="Quill">Quill Rich Text Editor</a>
 </h1>
