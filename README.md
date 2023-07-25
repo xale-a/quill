@@ -1,3 +1,6 @@
+<h1>Note:</h1>
+This is general version, for version that's used for histre webapp, please use branches with <code>-histre</code> extension.
+
 <h1>Build</h1>
 
 To install dependencies run:
